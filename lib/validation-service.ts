@@ -404,8 +404,8 @@ export class ValidationService {
               documentNumber: numeroDocumento,
               series: serieDocumento,
               issueDate: satGroup[0].DataEmissao,
-              field: "Situacao",
-              satValue: "CANCELADA",
+            field: "Situacao",
+            satValue: "CANCELADA",
               questorValue: totalValue.toString(),
               description: "NOTA FISCAL CANCELADA - NÃO DEVE SER ESCRITURADA",
               severity: "error"

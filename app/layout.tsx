@@ -50,11 +50,11 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
-            <SidebarProvider>
-              <SettingsProvider>
-                {children}
-              </SettingsProvider>
-            </SidebarProvider>
+          <SidebarProvider>
+            <SettingsProvider>
+              {children}
+            </SettingsProvider>
+          </SidebarProvider>
           </AuthProvider>
           <Toaster richColors position="top-right" />
         </ThemeProvider>

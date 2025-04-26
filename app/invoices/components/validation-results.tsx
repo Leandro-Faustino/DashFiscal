@@ -9,8 +9,8 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table"
+import { CheckCircle2, FileSpreadsheet } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { FileSpreadsheet, CheckCircle2 } from "lucide-react"
 import { cn, formatCurrency, formatDate, formatDocument } from "@/lib/utils"
 import { ValidationResult, ValidationService } from "@/lib/validation-service"
 import { FilterPanel, FilterValues } from "./filter-panel"
@@ -30,14 +30,16 @@ export function ValidationResults({ results, isProcessing }: ValidationResultsPr
   }, [results])
   
   if (!results) return null;
-  
-  const handleExportReport = () => {
-    // Garantir que exportamos todas as divergências, independente dos filtros aplicados
-    ValidationService.downloadValidationReport(results);
-  };
-  
-  const handleExportPdfReport = () => {
-    ValidationService.downloadPdfReport(results);
+
+  // Função para exportar apenas os resultados filtrados
+  const handleExportFilteredResults = () => {
+    // Criar um relatório adaptado com apenas as linhas filtradas
+    const filteredResults = {
+      ...results,
+      issues: issuesToDisplay
+    };
+    
+    ValidationService.downloadValidationReport(filteredResults);
   };
 
   // Função para formatar valores com base no tipo de campo
@@ -86,46 +88,15 @@ export function ValidationResults({ results, isProcessing }: ValidationResultsPr
   const handleApplyFilters = (newFilters: FilterValues) => {
     setFilters(newFilters)
     
-    // Para o filtro "ok", temos que tratar de forma especial
-    if (newFilters.statusFilter === 'ok') {
-      setFilteredIssues([]) // Não mostra nenhuma issue quando o filtro é 'ok'
+    // Se o filtro estiver vazio, mostrar todos os resultados
+    if (!newFilters.documentNumber.trim()) {
+      setFilteredIssues(results.issues)
       return
     }
     
-    // Aplicar os filtros às issues existentes
+    // Aplicar o filtro por número de documento
     const filtered = results.issues.filter(issue => {
-      // Filtro por data
-      if (newFilters.startDate || newFilters.endDate) {
-        const issueDate = new Date(issue.issueDate)
-        if (newFilters.startDate && issueDate < newFilters.startDate) {
-          return false
-        }
-        if (newFilters.endDate) {
-          // Adiciona 1 dia à data final para incluir todo o dia
-          const endDatePlusOne = new Date(newFilters.endDate)
-          endDatePlusOne.setDate(endDatePlusOne.getDate() + 1)
-          if (issueDate >= endDatePlusOne) {
-            return false
-          }
-        }
-      }
-      
-      // Filtro por CNPJ (simplificado, na implementação real seria verificado em ambos os campos)
-      if (newFilters.cnpj && !issue.documentNumber.includes(newFilters.cnpj)) {
-        return false
-      }
-      
-      // Filtro por status
-      if (newFilters.statusFilter !== 'all') {
-        if (newFilters.statusFilter === 'warning' && issue.severity !== 'warning') {
-          return false
-        }
-        if (newFilters.statusFilter === 'error' && issue.severity !== 'error') {
-          return false
-        }
-      }
-      
-      return true
+      return issue.documentNumber.includes(newFilters.documentNumber.trim())
     })
     
     setFilteredIssues(filtered)
@@ -161,14 +132,26 @@ export function ValidationResults({ results, isProcessing }: ValidationResultsPr
               ? `Divergências Encontradas: ${issuesToDisplay.length}` 
               : "Nenhuma divergência encontrada"}
           </h4>
-          <FilterPanel 
-            onApplyFilters={handleApplyFilters}
-            onResetFilters={handleResetFilters}
-          />
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 gap-1"
+              onClick={handleExportFilteredResults}
+              disabled={isProcessing || issuesToDisplay.length === 0}
+              title="Exportar tabela atual para Excel"
+            >
+              <FileSpreadsheet className="h-3.5 w-3.5" />
+              <span>Excel</span>
+            </Button>
+            <FilterPanel 
+              onApplyFilters={handleApplyFilters}
+              onResetFilters={handleResetFilters}
+            />
+          </div>
         </div>
         
-        {(results.issues.length > 0 || filters?.statusFilter === 'ok') && (
-          <>
+        {results.issues.length > 0 && (
           <div className="border rounded-md overflow-hidden">
             <Table>
               <TableHeader>
@@ -212,49 +195,15 @@ export function ValidationResults({ results, isProcessing }: ValidationResultsPr
                   ) : (
                     <TableRow>
                       <TableCell colSpan={5} className="text-center py-4 text-muted-foreground">
-                        {filters?.statusFilter === 'ok' 
-                          ? `${results.matchedRecords} notas fiscais validadas com sucesso.` 
-                          : "Nenhum registro encontrado com os filtros aplicados"}
+                        Nenhuma nota fiscal encontrada com o número informado
                       </TableCell>
                     </TableRow>
                   )}
               </TableBody>
             </Table>
           </div>
-            
-            <div className="flex justify-between mt-4">
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleExportReport}
-                  disabled={isProcessing}
-                  className="gap-1"
-                  title="Exporta a tabela completa com todas as divergências encontradas"
-                >
-                  <FileSpreadsheet className="h-4 w-4 mr-1" />
-                  Excel
-                </Button>
-          
-          <Button 
-            variant="outline" 
-            size="sm" 
-                  onClick={handleExportPdfReport}
-            disabled={isProcessing}
-                  className="gap-1"
-          >
-                  <FileSpreadsheet className="h-4 w-4 mr-1" />
-                  PDF
-          </Button>
-        </div>
-              
-              <div className="text-sm text-muted-foreground">
-                {filters && `Filtros aplicados: ${filteredIssues.length} de ${results.issues.length} divergências`}
-              </div>
-            </div>
-          </>
-      )}
+        )}
       </div>
     </div>
-  );
+  )
 } 
