@@ -1,0 +1,532 @@
+import * as XLSX from 'xlsx';
+
+export interface ValidationIssue {
+  documentNumber: string;
+  series: string;
+  issueDate: string;
+  field: string;
+  satValue: string;
+  questorValue: string;
+  difference?: string;
+  description?: string;
+  severity: 'error' | 'warning';
+}
+
+export interface ValidationResult {
+  success: boolean;
+  totalRecords: number;
+  matchedRecords: number;
+  issues: ValidationIssue[];
+}
+
+// Interface para representar uma nota fiscal SAT
+interface SatInvoice {
+  NumeroDocumento: string;
+  SerieDocumento: string;
+  DataEmissao: string;
+  CnpjOuCpfDoEmitente: string;
+  CnpjOuCpfDoDestinatario: string;
+  UfDestinatario: string;
+  ModeloDocumento: string;
+  TipoDocumento: string;
+  TipoDeOperacaoEntradaOuSaida: string;
+  Situacao: string;
+  ValorTotalNota?: number;
+  ValorTotalICMS?: number;
+  ValorBaseCalculoICMS?: number;
+  ValorBaseCalculoICMSST?: number;
+  ValorTotalICMSST?: number;
+  ValorFrete?: number;
+  ValorSeguro?: number;
+  ValorDespesaAcessoria?: number;
+  ValorDesconto?: number;
+  ValorIPI?: number;
+  ValorTotalIpiDevolvA58?: number;
+  ValorPis?: number;
+  ValorCofins?: number;
+}
+
+// Interface para representar uma nota fiscal Questor
+interface QuestorInvoice {
+  Número: string;
+  Série: string;
+  "Data Escrituração/Serviço": string;
+  "CNPJ EMITENTE": string;
+  "CNPJ DESTINATARIO": string;
+  Estado: string;
+  "Valor Total": number;
+  "Valor ICMS": number;
+  "Base Cálculo ICMS": number;
+  "Base Cálculo Substituição Tributária": number;
+  "Valor Substituição Tributária": number;
+  "Valor Frete": number;
+  "Valor Seguro": number;
+  "Valor Despesa Acessória": number;
+  "Valor Desconto": number;
+  "Valor IPI": number;
+  "Valor PIS": number;
+  "Valor COFINS": number;
+}
+
+export class ValidationService {
+  /**
+   * Valida dados entre planilhas SAT e Questor para notas emitidas
+   * @param satFile - Arquivo da planilha SAT
+   * @param questorFile - Arquivo da planilha Questor
+   * @returns Resultado da validação
+   */
+  static async validateSatQuestor(satFile: File, questorFile: File): Promise<ValidationResult> {
+    try {
+      // Aqui seria implementada a lógica real de validação
+      // Por enquanto, retornamos uma simulação de resultados
+      
+      // Simulação de um atraso para ilustrar processamento
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Simulação de resultados - em uma implementação real, isso viria da análise dos arquivos
+      const simulatedResults: ValidationResult = {
+        success: true,
+        totalRecords: 45,
+        matchedRecords: 42,
+        issues: [
+          {
+            documentNumber: "9909",
+            series: "1",
+            issueDate: "2023-05-15",
+            field: "ValorTotalNota",
+            satValue: "372284.96",
+            questorValue: "372284.95",
+            difference: "0.01",
+            severity: "warning"
+          },
+          {
+            documentNumber: "10025",
+            series: "1",
+            issueDate: "2023-06-02",
+            field: "ValorIPI",
+            satValue: "1250.00",
+            questorValue: "0.00",
+            difference: "1250.00",
+            severity: "error"
+          },
+          {
+            documentNumber: "10112",
+            series: "2",
+            issueDate: "2023-06-10",
+            field: "Situacao",
+            satValue: "CANCELADA",
+            questorValue: "850.00",
+            description: "NOTA FISCAL CANCELADA",
+            severity: "error"
+          }
+        ]
+      };
+      
+      return simulatedResults;
+      
+    } catch (error) {
+      console.error("Erro na validação:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Valida dados entre planilhas SAT Destinadas e Questor Entradas
+   * @param satFile - Arquivo da planilha SAT Destinadas
+   * @param questorFile - Arquivo da planilha Questor Entradas
+   * @returns Resultado da validação
+   */
+  static async validateSatQuestorDestinadas(satFile: File, questorFile: File): Promise<ValidationResult> {
+    try {
+      // Lê os dados das planilhas
+      const satData = await this.readExcelFile(satFile) as SatInvoice[];
+      const questorData = await this.readExcelFile(questorFile) as QuestorInvoice[];
+      
+      const issues: ValidationIssue[] = [];
+      let totalRecords = 0;
+      let matchedRecords = 0;
+
+      // Agrupa registros do SAT pelo NumeroDocumento e SerieDocumento
+      const satInvoiceGroups = this.groupSatInvoicesByNumberAndSeries(satData);
+      
+      // Para cada grupo de notas do SAT
+      for (const key in satInvoiceGroups) {
+        const satGroup = satInvoiceGroups[key];
+        const [numeroDocumento, serieDocumento] = key.split('|');
+        totalRecords++;
+        
+        // RF-001: Validação Inicial de Dados na Planilha SAT Destinadas
+        // Verifica se todos os registros do grupo possuem os campos obrigatórios com os valores esperados
+        const invalidInitialData = satGroup.some(sat => 
+          sat.ModeloDocumento !== "55" || 
+          sat.TipoDocumento !== "Nfe" || 
+          (sat.Situacao !== "Autorizado" && sat.Situacao !== "CANCELADA")
+        );
+        
+        if (invalidInitialData) {
+          issues.push({
+            documentNumber: numeroDocumento,
+            series: serieDocumento,
+            issueDate: satGroup[0].DataEmissao,
+            field: "Dados Básicos",
+            satValue: "Inválido",
+            questorValue: "-",
+            description: "Dados básicos inválidos (Modelo, Tipo ou Situação)",
+            severity: "error"
+          });
+          continue;
+        }
+        
+        // RF-002: Tratamento de Exceções na Análise Preliminar
+        // Verifica TipoDeOperacaoEntradaOuSaida
+        if (satGroup[0].TipoDeOperacaoEntradaOuSaida === "E") {
+          issues.push({
+            documentNumber: numeroDocumento,
+            series: serieDocumento,
+            issueDate: satGroup[0].DataEmissao,
+            field: "TipoDeOperacaoEntradaOuSaida",
+            satValue: "E",
+            questorValue: "-",
+            description: "NOTA FISCAL ENTRADA FORNECEDOR NÃO DEVE SER ESCRITURADA - VERIFICAR",
+            severity: "error"
+          });
+          continue;
+        }
+        
+        // Verifica Situacao
+        if (satGroup[0].Situacao === "CANCELADA") {
+          // Busca correspondência na planilha Questor
+          const questorMatch = questorData.find(q => 
+            q.Número === numeroDocumento && 
+            q.Série === serieDocumento
+          );
+          
+          if (questorMatch) {
+            issues.push({
+              documentNumber: numeroDocumento,
+              series: serieDocumento,
+              issueDate: satGroup[0].DataEmissao,
+              field: "Situacao",
+              satValue: "CANCELADA",
+              questorValue: questorMatch["Valor Total"]?.toString() || "-",
+              description: "NOTA CANCELADA, NÃO DEVE SER ESCRITURADA",
+              severity: "error"
+            });
+          }
+          continue;
+        }
+        
+        // RF-003 e RF-004: Comparação de Campos e Validação de Valores
+        
+        // Busca correspondência na planilha Questor
+        const questorMatch = questorData.find(q => 
+          q.Número === numeroDocumento && 
+          q.Série === serieDocumento
+        );
+        
+        if (!questorMatch) {
+          issues.push({
+            documentNumber: numeroDocumento,
+            series: serieDocumento,
+            issueDate: satGroup[0].DataEmissao,
+            field: "Documento",
+            satValue: "Presente",
+            questorValue: "Ausente",
+            description: "Nota fiscal não encontrada na planilha Questor",
+            severity: "error"
+          });
+          continue;
+        }
+        
+        // Validação dos campos de correspondência
+        const fieldMappings = [
+          { sat: "DataEmissao", questor: "Data Escrituração/Serviço", label: "Data" },
+          { sat: "CnpjOuCpfDoEmitente", questor: "CNPJ EMITENTE", label: "CNPJ Emitente" },
+          { sat: "CnpjOuCpfDoDestinatario", questor: "CNPJ DESTINATARIO", label: "CNPJ Destinatário" },
+          { sat: "UfDestinatario", questor: "Estado", label: "UF Destinatário" }
+        ];
+        
+        let invalidFields = false;
+        
+        for (const mapping of fieldMappings) {
+          const satValue = satGroup[0][mapping.sat as keyof SatInvoice];
+          const questorValue = questorMatch[mapping.questor as keyof QuestorInvoice];
+          
+          if (satValue !== questorValue) {
+            issues.push({
+              documentNumber: numeroDocumento,
+              series: serieDocumento,
+              issueDate: satGroup[0].DataEmissao,
+              field: mapping.label,
+              satValue: satValue?.toString() || "-",
+              questorValue: questorValue?.toString() || "-",
+              description: "Divergência entre SAT e Questor",
+              severity: "error"
+            });
+            invalidFields = true;
+          }
+        }
+        
+        if (invalidFields) continue;
+        
+        // Calcula os valores totalizados da planilha SAT
+        const satTotals = this.calculateSatTotals(satGroup);
+        
+        // Validação dos valores totalizados
+        const valueMappings = [
+          { sat: "ValorTotalNota", questor: ["Valor Total", "Valor IPI"], label: "Valor Total Nota" },
+          { sat: "ValorTotalICMS", questor: ["Valor ICMS"], label: "Valor ICMS" },
+          { sat: "ValorBaseCalculoICMS", questor: ["Base Cálculo ICMS"], label: "Base Cálculo ICMS" },
+          { sat: "ValorBaseCalculoICMSST", questor: ["Base Cálculo Substituição Tributária"], label: "Base Cálculo ST" },
+          { sat: "ValorTotalICMSST", questor: ["Valor Substituição Tributária"], label: "Valor ICMS ST" },
+          { sat: "ValorFrete", questor: ["Valor Frete"], label: "Valor Frete" },
+          { sat: "ValorSeguro", questor: ["Valor Seguro"], label: "Valor Seguro" },
+          { sat: "ValorDespesaAcessoria", questor: ["Valor Despesa Acessória"], label: "Valor Despesa Acessória" },
+          { sat: "ValorDesconto", questor: ["Valor Desconto"], label: "Valor Desconto" },
+          { sat: "ValorIPI", questor: ["Valor IPI"], label: "Valor IPI" },
+          { sat: "ValorPis", questor: ["Valor PIS"], label: "Valor PIS" },
+          { sat: "ValorCofins", questor: ["Valor COFINS"], label: "Valor COFINS" }
+        ];
+        
+        let hasValueIssues = false;
+        
+        for (const mapping of valueMappings) {
+          const satValue = satTotals[mapping.sat];
+          
+          // Para o caso especial onde somamos campos
+          let questorValue = 0;
+          for (const questorField of mapping.questor) {
+            questorValue += questorMatch[questorField as keyof QuestorInvoice] as number || 0;
+          }
+          
+          // RF-011: Tolerância para diferenças de arredondamento (0.01)
+          const difference = Math.abs((satValue || 0) - questorValue);
+          
+          if (difference > 0.01) {
+            issues.push({
+              documentNumber: numeroDocumento,
+              series: serieDocumento,
+              issueDate: satGroup[0].DataEmissao,
+              field: mapping.label,
+              satValue: satValue?.toFixed(2) || "0.00",
+              questorValue: questorValue?.toFixed(2) || "0.00",
+              difference: difference.toFixed(2),
+              severity: difference > 1 ? "error" : "warning" // Diferença grande é erro, pequena é alerta
+            });
+            hasValueIssues = true;
+          }
+        }
+        
+        // RF-005: Tratamento de IPI em Complementares
+        if ((satTotals.ValorTotalIpiDevolvA58 || 0) > 0) {
+          issues.push({
+            documentNumber: numeroDocumento,
+            series: serieDocumento,
+            issueDate: satGroup[0].DataEmissao,
+            field: "IPI Complementar",
+            satValue: satTotals.ValorTotalIpiDevolvA58?.toFixed(2) || "0.00",
+            questorValue: "-",
+            description: "VERIFICAR VALOR DE IPI EM COMPLEMENTARES",
+            severity: "warning"
+          });
+          hasValueIssues = true;
+        }
+        
+        if (!hasValueIssues) {
+          matchedRecords++;
+        }
+      }
+      
+      return {
+        success: issues.length === 0,
+        totalRecords,
+        matchedRecords,
+        issues
+      };
+      
+    } catch (error) {
+      console.error("Erro na validação:", error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Agrupa registros SAT pelo número e série do documento
+   * @param satData - Dados da planilha SAT
+   * @returns Registros agrupados por número e série
+   */
+  private static groupSatInvoicesByNumberAndSeries(satData: SatInvoice[]): Record<string, SatInvoice[]> {
+    const groups: Record<string, SatInvoice[]> = {};
+    
+    satData.forEach(invoice => {
+      const key = `${invoice.NumeroDocumento}|${invoice.SerieDocumento}`;
+      
+      if (!groups[key]) {
+        groups[key] = [];
+      }
+      
+      groups[key].push(invoice);
+    });
+    
+    return groups;
+  }
+  
+  /**
+   * Calcula os valores totalizados para um grupo de registros SAT
+   * @param satGroup - Grupo de registros SAT
+   * @returns Valores totalizados
+   */
+  private static calculateSatTotals(satGroup: SatInvoice[]): Record<string, number> {
+    const totals: Record<string, number> = {
+      ValorTotalNota: 0,
+      ValorTotalICMS: 0,
+      ValorBaseCalculoICMS: 0,
+      ValorBaseCalculoICMSST: 0,
+      ValorTotalICMSST: 0,
+      ValorFrete: 0,
+      ValorSeguro: 0,
+      ValorDespesaAcessoria: 0,
+      ValorDesconto: 0,
+      ValorIPI: 0,
+      ValorTotalIpiDevolvA58: 0,
+      ValorPis: 0,
+      ValorCofins: 0
+    };
+    
+    satGroup.forEach(invoice => {
+      for (const key in totals) {
+        const typedKey = key as keyof typeof totals;
+        const invoiceValue = invoice[typedKey as keyof SatInvoice] as number | undefined;
+        totals[typedKey] += invoiceValue || 0;
+      }
+    });
+    
+    return totals;
+  }
+  
+  /**
+   * Lê uma planilha Excel e extrai seus dados
+   * @param file - Arquivo Excel ou CSV
+   * @returns Dados da planilha
+   */
+  static async readExcelFile(file: File): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      
+      reader.onload = (e) => {
+        try {
+          const data = e.target?.result;
+          const workbook = XLSX.read(data, { type: 'array' });
+          
+          const worksheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[worksheetName];
+          
+          const jsonData = XLSX.utils.sheet_to_json(worksheet);
+          resolve(jsonData);
+        } catch (error) {
+          reject(error);
+        }
+      };
+      
+      reader.onerror = (error) => {
+        reject(error);
+      };
+      
+      reader.readAsArrayBuffer(file);
+    });
+  }
+  
+  /**
+   * Gera um relatório Excel com os resultados da validação
+   * @param results - Resultados da validação
+   * @returns Blob do arquivo Excel
+   */
+  static generateReportFile(results: ValidationResult): Blob {
+    // Criar um workbook
+    const workbook = XLSX.utils.book_new();
+    
+    // Criar dados para a planilha de resumo
+    const summaryData = [
+      ['Relatório de Validação - SAT vs Questor'],
+      [''],
+      ['Total de registros analisados', results.totalRecords],
+      ['Registros validados com sucesso', results.matchedRecords],
+      ['Percentual de sucesso', `${Math.round((results.matchedRecords / results.totalRecords) * 100)}%`],
+      ['Total de problemas encontrados', results.issues.length],
+      ['']
+    ];
+    
+    // Criar dados para a planilha de problemas
+    const issuesData = [
+      ['Número', 'Série', 'Data', 'Campo', 'Valor SAT', 'Valor Questor', 'Diferença/Problema', 'Severidade']
+    ];
+    
+    // Adicionar cada problema à planilha
+    results.issues.forEach(issue => {
+      issuesData.push([
+        issue.documentNumber,
+        issue.series,
+        issue.issueDate,
+        issue.field,
+        issue.satValue,
+        issue.questorValue,
+        issue.difference || issue.description || '',
+        issue.severity === 'error' ? 'Erro' : 'Alerta'
+      ]);
+    });
+    
+    // Adicionar as planilhas ao workbook
+    const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
+    XLSX.utils.book_append_sheet(workbook, summarySheet, 'Resumo');
+    
+    const issuesSheet = XLSX.utils.aoa_to_sheet(issuesData);
+    XLSX.utils.book_append_sheet(workbook, issuesSheet, 'Problemas');
+    
+    // Gerar o arquivo em formato binário
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    
+    // Criar e retornar um Blob com os dados
+    return new Blob([excelBuffer], { 
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+    });
+  }
+  
+  /**
+   * Faz o download do relatório de validação
+   * @param results - Resultados da validação
+   */
+  static downloadValidationReport(results: ValidationResult): void {
+    const blob = this.generateReportFile(results);
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const filename = `validacao-sat-questor_${timestamp}.xlsx`;
+    
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    
+    // Limpa os recursos
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 0);
+  }
+
+  /**
+   * Faz o download do relatório de validação em formato PDF
+   * Esta é uma implementação simulada - em um ambiente real, 
+   * usaríamos uma biblioteca como jsPDF ou html2pdf
+   * @param results - Resultados da validação
+   */
+  static downloadPdfReport(results: ValidationResult): void {
+    // Em um ambiente real, aqui seria gerado o PDF usando jsPDF ou similar
+    // Mostrar alerta informativo sobre a funcionalidade
+    alert('Funcionalidade de exportação para PDF será implementada na próxima versão.');
+    
+    // Simulação de download para demonstração da interface
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    console.log(`Iniciando download simulado do arquivo: validacao-sat-questor_${timestamp}.pdf`);
+  }
+} 
