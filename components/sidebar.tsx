@@ -7,43 +7,46 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useState, useEffect } from "react"
 import { useSidebar } from "@/context/sidebar-context"
+import { useAuth } from "@/context/auth-context"
 
 const routes = [
   {
     label: 'Dashboard',
     icon: LayoutDashboard,
-    href: '/',
-    color: "text-green-500"
+    href: '/dashboard',
+    color: "text-white"
   },
   {
     label: 'Empresa',
     icon: Building2,
     href: '/company',
-    color: "text-indigo-500"
+    color: "text-white"
   },
   {
     label: 'Upload',
     icon: Upload,
     href: '/upload',
-    color: "text-blue-500"
+    color: "text-white"
   },
   {
     label: 'Notas Fiscais',
     icon: Receipt,
     href: '/invoices',
-    color: "text-yellow-500"
+    color: "text-white"
   },
   {
     label: 'Configurações',
     icon: Settings,
     href: '/settings',
+    color: "text-white"
   },
 ]
 
 export function Sidebar() {
   const pathname = usePathname()
   const [isMobileOpen, setIsMobileOpen] = useState(false)
-  const { isCollapsed } = useSidebar();
+  const { isCollapsed } = useSidebar()
+  const { logout } = useAuth()
   
   // Fechar o menu móvel ao mudar de tamanho de tela
   useEffect(() => {
@@ -90,22 +93,24 @@ export function Sidebar() {
           className="absolute top-3 right-3 md:hidden text-white hover:bg-white/10 border-0"
           onClick={() => setIsMobileOpen(false)}
         >
-          <X className="h-5 w-5" />
+          <X className="h-5 w-5 text-white/80" />
         </Button>
         
         <div className="flex flex-col h-full text-white">
-          {/* Logo - no topo absoluto */}
+          {/* Novo Logo - alinhado com os ícones */}
           <Link 
-            href="/" 
+            href="/dashboard" 
             className={cn(
-              "flex items-center h-16 justify-center",
-              isCollapsed ? "" : "px-4"
+              "flex h-16 items-center",
+              isCollapsed ? "justify-center" : "px-6"
             )}
           >
             {isCollapsed ? (
-              <div className="text-2xl font-bold">FP</div>
+              <div className="flex items-center justify-center w-5 h-5">
+                <span className="text-lg font-bold text-white/80 hover:text-yellow-300 transition">DF</span>
+              </div>
             ) : (
-              <h1 className="text-2xl font-bold">Finance Pro</h1>
+              <h1 className="text-2xl font-bold">DashFiscal</h1>
             )}
           </Link>
           
@@ -131,7 +136,7 @@ export function Sidebar() {
                     <route.icon className={cn(
                       "h-5 w-5",
                       isCollapsed ? "" : "mr-3",
-                      route.color
+                      pathname === route.href ? "text-yellow-300" : "text-white/80"
                     )} />
                     {!isCollapsed && <span>{route.label}</span>}
                   </div>
@@ -152,10 +157,10 @@ export function Sidebar() {
                 "text-white hover:bg-white/10 border-0",
                 isCollapsed ? "w-10 h-10" : "w-full justify-start"
               )} 
-              onClick={() => {}}
+              onClick={logout}
               title={isCollapsed ? "Logout" : ""}
             >
-              <LogOut className={isCollapsed ? "h-5 w-5" : "mr-3 h-5 w-5"} />
+              <LogOut className={isCollapsed ? "h-5 w-5 text-white/80" : "mr-3 h-5 w-5 text-white/80"} />
               {!isCollapsed && "Logout"}
             </Button>
           </div>

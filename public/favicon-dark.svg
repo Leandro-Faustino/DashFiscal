@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+  <!-- Fundo branco com cantos arredondados (para modo escuro) -->
+  <rect width="32" height="32" rx="8" fill="white" />
+  
+  <!-- Texto "DF" em verde -->
+  <text x="16" y="22" font-family="Arial, sans-serif" font-weight="bold" font-size="16" fill="#217346" text-anchor="middle">DF</text>
+  
+  <!-- Pequeno elemento decorativo linear sugerindo um documento ou gráfico -->
+  <path d="M8,10 H24 M8,14 H20" stroke="#217346" stroke-width="1.5" stroke-linecap="round" opacity="0.8" />
+</svg> 

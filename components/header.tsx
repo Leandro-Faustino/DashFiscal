@@ -1,4 +1,4 @@
-import { Bell, ChevronLeft, ChevronRight, Menu } from "lucide-react"
+import { ChevronLeft, ChevronRight, Menu } from "lucide-react"
 import { Button } from "./ui/button"
 import { useSidebar } from "@/context/sidebar-context"
 import { cn } from "@/lib/utils"
@@ -15,7 +15,7 @@ function getPageTitle(path: string): string {
     '/settings': 'Configurações',
   };
   
-  return routes[path] || 'Finance Pro';
+  return routes[path] || 'Conciliação Fiscal';
 }
 
 export function Header() {
@@ -50,12 +50,6 @@ export function Header() {
         
         <div className="ml-auto flex items-center space-x-4">
           <ThemeToggle />
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="h-5 w-5" />
-            <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 text-[10px] font-medium text-white grid place-items-center">
-              3
-            </span>
-          </Button>
           <div className="h-8 w-8 rounded-full bg-green-500 grid place-items-center">
             <span className="text-sm font-medium text-white">JD</span>
           </div>

@@ -88,6 +88,9 @@ export class ValidationService {
       // Agrupa registros do SAT pelo NumeroDocumento e SerieDocumento
       const satInvoiceGroups = this.groupSatInvoicesByNumberAndSeries(satData);
       
+      // Agrupa registros do Questor pelo Número e Série
+      const questorInvoiceGroups = this.groupQuestorInvoicesByNumberAndSeries(questorData);
+      
       // Para cada grupo de notas do SAT
       for (const key in satInvoiceGroups) {
         const satGroup = satInvoiceGroups[key];
@@ -134,19 +137,19 @@ export class ValidationService {
         // RF-003: Tratamento para Notas Canceladas
         if (satGroup[0].Situacao === "CANCELADA") {
           // Busca correspondência na planilha Questor
-          const questorMatch = questorData.find(q => 
-            q.Número === numeroDocumento && 
-            q.Série === serieDocumento
-          );
+          const questorGroup = questorInvoiceGroups[`${numeroDocumento}|${serieDocumento}`] || [];
           
-          if (questorMatch && questorMatch["Valor Total"] > 0) {
+          // Se tem itens no grupo e pelo menos um deles tem valor maior que zero
+          if (questorGroup.length > 0 && questorGroup.some(q => q["Valor Total"] > 0)) {
+            const totalValue = questorGroup.reduce((sum, q) => sum + (q["Valor Total"] || 0), 0);
+            
             issues.push({
               documentNumber: numeroDocumento,
               series: serieDocumento,
               issueDate: satGroup[0].DataEmissao,
               field: "Situacao",
               satValue: "CANCELADA",
-              questorValue: questorMatch["Valor Total"]?.toString() || "-",
+              questorValue: totalValue.toString(),
               description: "NOTA FISCAL CANCELADA",
               severity: "error"
             });
@@ -157,12 +160,9 @@ export class ValidationService {
         // RF-004: Comparação de Campos Identificadores
         
         // Busca correspondência na planilha Questor
-        const questorMatch = questorData.find(q => 
-          q.Número === numeroDocumento && 
-          q.Série === serieDocumento
-        );
+        const questorGroup = questorInvoiceGroups[`${numeroDocumento}|${serieDocumento}`] || [];
         
-        if (!questorMatch) {
+        if (questorGroup.length === 0) {
           issues.push({
             documentNumber: numeroDocumento,
             series: serieDocumento,
@@ -176,7 +176,8 @@ export class ValidationService {
           continue;
         }
         
-        // Validação dos campos de correspondência
+        // Validação dos campos de correspondência usando o primeiro item do grupo Questor
+        const questorMatch = questorGroup[0];
         const fieldMappings = [
           { sat: "DataEmissao", questor: "Data Escrituração/Serviço", label: "Data" },
           { sat: "CnpjOuCpfDoEmitente", questor: "CNPJ EMITENTE", label: "CNPJ Emitente" },
@@ -231,6 +232,9 @@ export class ValidationService {
         // Calcula os valores totalizados da planilha SAT
         const satTotals = this.calculateSatTotals(satGroup);
         
+        // Calcula os valores totalizados da planilha Questor para o grupo atual
+        const questorTotals = this.calculateQuestorTotals(questorGroup);
+        
         // Validação dos valores totalizados
         const valueMappings = [
           { sat: "ValorTotalNota", questor: ["Valor Total", "Valor IPI"], label: "Valor Total Nota" },
@@ -252,10 +256,10 @@ export class ValidationService {
         for (const mapping of valueMappings) {
           const satValue = satTotals[mapping.sat];
           
-          // Para o caso especial onde somamos campos
+          // Obter o valor totalizado do Questor para o campo atual
           let questorValue = 0;
           for (const questorField of mapping.questor) {
-            questorValue += questorMatch[questorField as keyof QuestorInvoice] as number || 0;
+            questorValue += questorTotals[questorField] || 0;
           }
           
           // RF-008: Tolerância para diferenças de arredondamento (0.01)
@@ -341,6 +345,9 @@ export class ValidationService {
       // Agrupa registros do SAT pelo NumeroDocumento e SerieDocumento
       const satInvoiceGroups = this.groupSatInvoicesByNumberAndSeries(satData);
       
+      // Agrupa registros do Questor pelo Número e Série
+      const questorInvoiceGroups = this.groupQuestorInvoicesByNumberAndSeries(questorData);
+      
       // Para cada grupo de notas do SAT
       for (const key in satInvoiceGroups) {
         const satGroup = satInvoiceGroups[key];
@@ -388,35 +395,31 @@ export class ValidationService {
         // Verifica Situacao
         if (satGroup[0].Situacao === "CANCELADA") {
           // Busca correspondência na planilha Questor
-          const questorMatch = questorData.find(q => 
-            q.Número === numeroDocumento && 
-            q.Série === serieDocumento
-          );
+          const questorGroup = questorInvoiceGroups[`${numeroDocumento}|${serieDocumento}`] || [];
           
-          if (questorMatch) {
+          if (questorGroup.length > 0) {
+            const totalValue = questorGroup.reduce((sum, q) => sum + (q["Valor Total"] || 0), 0);
+            
             issues.push({
               documentNumber: numeroDocumento,
               series: serieDocumento,
               issueDate: satGroup[0].DataEmissao,
-            field: "Situacao",
-            satValue: "CANCELADA",
-              questorValue: questorMatch["Valor Total"]?.toString() || "-",
-              description: "NOTA CANCELADA, NÃO DEVE SER ESCRITURADA",
+              field: "Situacao",
+              satValue: "CANCELADA",
+              questorValue: totalValue.toString(),
+              description: "NOTA FISCAL CANCELADA - NÃO DEVE SER ESCRITURADA",
               severity: "error"
             });
           }
           continue;
         }
         
-        // RF-003 e RF-004: Comparação de Campos e Validação de Valores
-        
+        // RF-003: Comparação de Campos Identificadores
         // Busca correspondência na planilha Questor
-        const questorMatch = questorData.find(q => 
-          q.Número === numeroDocumento && 
-          q.Série === serieDocumento
-        );
+        const questorGroup = questorInvoiceGroups[`${numeroDocumento}|${serieDocumento}`] || [];
         
-        if (!questorMatch) {
+        if (questorGroup.length === 0) {
+          // Aviso, não erro, pois algumas notas podem não precisar ser escrituradas
           issues.push({
             documentNumber: numeroDocumento,
             series: serieDocumento,
@@ -424,13 +427,14 @@ export class ValidationService {
             field: "Documento",
             satValue: "Presente",
             questorValue: "Ausente",
-            description: "Nota fiscal não encontrada na planilha Questor",
-            severity: "error"
+            description: "NOTA FISCAL NÃO ENCONTRADA NA PLANILHA QUESTOR - VERIFICAR SE DEVE SER ESCRITURADA",
+            severity: "warning"
           });
           continue;
         }
         
-        // Validação dos campos de correspondência
+        // Validação dos campos de correspondência usando o primeiro item do grupo Questor
+        const questorMatch = questorGroup[0];
         const fieldMappings = [
           { sat: "DataEmissao", questor: "Data Escrituração/Serviço", label: "Data" },
           { sat: "CnpjOuCpfDoEmitente", questor: "CNPJ EMITENTE", label: "CNPJ Emitente" },
@@ -481,8 +485,12 @@ export class ValidationService {
         
         if (invalidFields) continue;
         
+        // RF-004 e RF-005: Agrupamento e Validação de Valores
         // Calcula os valores totalizados da planilha SAT
         const satTotals = this.calculateSatTotals(satGroup);
+        
+        // Calcula os valores totalizados da planilha Questor para o grupo atual
+        const questorTotals = this.calculateQuestorTotals(questorGroup);
         
         // Validação dos valores totalizados
         const valueMappings = [
@@ -505,13 +513,13 @@ export class ValidationService {
         for (const mapping of valueMappings) {
           const satValue = satTotals[mapping.sat];
           
-          // Para o caso especial onde somamos campos
+          // Obter o valor totalizado do Questor para o campo atual
           let questorValue = 0;
           for (const questorField of mapping.questor) {
-            questorValue += questorMatch[questorField as keyof QuestorInvoice] as number || 0;
+            questorValue += questorTotals[questorField] || 0;
           }
           
-          // RF-011: Tolerância para diferenças de arredondamento (0.01)
+          // RF-006: Tolerância para diferenças de arredondamento (0.01)
           const difference = Math.abs((satValue || 0) - questorValue);
           
           if (difference > 0.01) {
@@ -527,21 +535,6 @@ export class ValidationService {
             });
             hasValueIssues = true;
           }
-        }
-        
-        // RF-005: Tratamento de IPI em Complementares
-        if ((satTotals.ValorTotalIpiDevolvA58 || 0) > 0) {
-          issues.push({
-            documentNumber: numeroDocumento,
-            series: serieDocumento,
-            issueDate: satGroup[0].DataEmissao,
-            field: "IPI Complementar",
-            satValue: satTotals.ValorTotalIpiDevolvA58?.toFixed(2) || "0.00",
-            questorValue: "-",
-            description: "VERIFICAR VALOR DE IPI EM COMPLEMENTARES",
-            severity: "warning"
-          });
-          hasValueIssues = true;
         }
         
         if (!hasValueIssues) {
@@ -1063,6 +1056,57 @@ export class ValidationService {
     
     // Se já estiver no formato YYYY-MM-DD ou outro formato não reconhecido, retorna o original
     return date;
+  }
+
+  /**
+   * Agrupa registros do Questor pelo Número e Série
+   * @param questorData - Dados do Questor
+   * @returns Objeto com chaves no formato "Número|Série" e valores como arrays de QuestorInvoice
+   */
+  private static groupQuestorInvoicesByNumberAndSeries(questorData: QuestorInvoice[]): Record<string, QuestorInvoice[]> {
+    const groups: Record<string, QuestorInvoice[]> = {};
+    
+    for (const invoice of questorData) {
+      const key = `${invoice.Número}|${invoice.Série}`;
+      
+      if (!groups[key]) {
+        groups[key] = [];
+      }
+      
+      groups[key].push(invoice);
+    }
+    
+    return groups;
+  }
+  
+  /**
+   * Calcula os totais de valores para um grupo de notas do Questor
+   * @param questorGroup - Grupo de notas do Questor
+   * @returns Objeto com campos somados para o grupo
+   */
+  private static calculateQuestorTotals(questorGroup: QuestorInvoice[]): Record<string, number> {
+    const totals: Record<string, number> = {
+      "Valor Total": 0,
+      "Valor ICMS": 0,
+      "Base Cálculo ICMS": 0,
+      "Base Cálculo Substituição Tributária": 0,
+      "Valor Substituição Tributária": 0,
+      "Valor Frete": 0,
+      "Valor Seguro": 0,
+      "Valor Despesa Acessória": 0,
+      "Valor Desconto": 0,
+      "Valor IPI": 0,
+      "Valor PIS": 0,
+      "Valor COFINS": 0
+    };
+    
+    for (const invoice of questorGroup) {
+      for (const field in totals) {
+        totals[field] += (invoice[field as keyof QuestorInvoice] as number) || 0;
+      }
+    }
+    
+    return totals;
   }
 }
 
