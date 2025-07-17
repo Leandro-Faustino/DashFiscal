@@ -64,24 +64,16 @@ export default function SettingsPage() {
   
   return (
     <div className="flex h-screen">
-      {/* Sidebar Desktop */}
-      <div className="hidden md:block h-full">
-        <Sidebar />
-      </div>
-      
-      {/* Sidebar Mobile - Visível apenas em dispositivos móveis */}
-      <div className="block md:hidden h-full">
-        <Sidebar />
-      </div>
+      <Sidebar />
       
       {/* Conteúdo principal */}
-      <div className="flex-1 transition-all duration-300">
+      <div className="flex-1 min-w-0 transition-all duration-300">
         <div className="sticky top-0 z-30 w-full">
           <Header />
         </div>
         <main className="h-[calc(100vh-64px)] overflow-y-auto">
-          <div className="p-4 sm:p-8">
-            <h1 className="text-2xl font-bold mb-6">Configurações</h1>
+          <div className="p-3 sm:p-6 lg:p-8">
+            <h1 className="text-xl sm:text-2xl font-bold mb-6">Configurações</h1>
             
             <Card className="max-w-2xl">
               <CardHeader>
@@ -111,6 +103,7 @@ export default function SettingsPage() {
                               type="button" 
                               variant="outline"
                               onClick={handleFolderSelection}
+                              className="shrink-0"
                             >
                               <Folder className="h-4 w-4 mr-2" />
                               Buscar
@@ -124,7 +117,7 @@ export default function SettingsPage() {
                       )}
                     />
                     
-                    <Button type="submit">Salvar Configuração</Button>
+                    <Button type="submit" className="w-full sm:w-auto">Salvar Configuração</Button>
                   </form>
                 </Form>
                 

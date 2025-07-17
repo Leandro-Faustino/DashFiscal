@@ -25,27 +25,25 @@ export default function CompanyPage() {
 
   return (
     <div className="flex h-screen">
-      {/* Sidebar - Apenas para desktop */}
-      <div className="hidden md:block h-full">
-        <Sidebar />
-      </div>
+      {/* Sidebar - responsivo */}
+      <Sidebar />
       
       {/* Conteúdo principal */}
-      <div className="flex-1 flex flex-col transition-all duration-300">
+      <div className="flex-1 flex flex-col transition-all duration-300 min-w-0">
         <div className="sticky top-0 z-30 w-full">
           <Header />
         </div>
         <main className="h-[calc(100vh-64px)] overflow-y-auto">
-          <div className="p-4 sm:p-8">
-            <div className="flex justify-between items-center mb-6">
-              <h1 className="text-2xl font-bold">Empresas</h1>
+          <div className="p-3 sm:p-4 lg:p-8">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4 sm:mb-6">
+              <h1 className="text-xl sm:text-2xl font-bold">Empresas</h1>
               <Button 
                 onClick={() => setIsFormOpen(true)}
                 size="sm"
-                className="px-4 py-2 h-10"
+                className="px-4 py-2 h-10 w-full sm:w-auto"
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Cadastrar Empresa
+                <span className="text-sm sm:text-base">Cadastrar Empresa</span>
               </Button>
             </div>
             

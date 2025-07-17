@@ -290,33 +290,26 @@ export default function UploadPage() {
   
   return (
     <div className="flex h-screen">
-      {/* Sidebar Desktop */}
-      <div className="hidden md:block h-full">
-        <Sidebar />
-      </div>
-      
-      {/* Sidebar Mobile - Visível apenas em dispositivos móveis */}
-      <div className="block md:hidden h-full">
-        <Sidebar />
-      </div>
+      <Sidebar />
       
       {/* Conteúdo principal */}
-      <div className="flex-1 transition-all duration-300">
+      <div className="flex-1 min-w-0 transition-all duration-300">
         <div className="sticky top-0 z-30 w-full">
           <Header />
         </div>
         <main className="h-[calc(100vh-64px)] overflow-y-auto">
-          <div className="p-4 sm:p-8">
-            <div className="flex items-center justify-between mb-6">
-              <h1 className="text-2xl font-bold">Upload</h1>
+          <div className="p-3 sm:p-6 lg:p-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+              <h1 className="text-xl sm:text-2xl font-bold">Upload</h1>
               
               <Button 
                 variant="outline" 
                 size="sm" 
                 onClick={() => setShowSpecDialog(true)}
+                className="w-full sm:w-auto"
               >
                 <Info className="h-4 w-4 mr-2" />
-                Ver Especificação
+                <span className="sm:inline">Ver Especificação</span>
               </Button>
             </div>
             

@@ -21,24 +21,17 @@ export default function Dashboard() {
   
   return (
     <div className="flex h-screen">
-      {/* Sidebar Desktop */}
-      <div className="hidden md:block h-full">
-        <Sidebar />
-      </div>
-      
-      {/* Sidebar Mobile - Visível apenas em dispositivos móveis */}
-      <div className="block md:hidden h-full">
-        <Sidebar />
-      </div>
+      {/* Sidebar - responsivo */}
+      <Sidebar />
       
       {/* Conteúdo principal */}
-      <div className={`flex-1 transition-all duration-300`}>
+      <div className="flex-1 transition-all duration-300 min-w-0">
         <div className="sticky top-0 z-30 w-full">
           <Header />
         </div>
         <main className="h-[calc(100vh-64px)] overflow-y-auto">
-          <div className="p-4 sm:p-8">
-            <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
+          <div className="p-3 sm:p-4 lg:p-8">
+            <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Dashboard</h1>
             
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
               <Card className="p-4">

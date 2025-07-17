@@ -82,7 +82,7 @@ export function Sidebar() {
       
       <div className={cn(
         "fixed inset-y-0 left-0 z-50 transform transition-all duration-300 ease-in-out bg-[#217346] h-full",
-        isMobileOpen ? "translate-x-0 w-3/4 max-w-xs" : "-translate-x-full",
+        isMobileOpen ? "translate-x-0 w-64" : "-translate-x-full", // Largura fixa mais apropriada para mostrar texto
         "md:relative md:translate-x-0",
         isCollapsed ? "md:w-16" : "md:w-72",
       )}>
@@ -97,21 +97,31 @@ export function Sidebar() {
         </Button>
         
         <div className="flex flex-col h-full text-white">
-          {/* Novo Logo - alinhado com os ícones */}
+          {/* Logo - responsivo */}
           <Link 
             href="/dashboard" 
             className={cn(
               "flex h-16 items-center",
-              isCollapsed ? "justify-center" : "px-6"
+              // No mobile sempre mostra o nome completo
+              "px-6 md:px-6",
+              isCollapsed ? "md:justify-center" : ""
             )}
           >
-            {isCollapsed ? (
-              <div className="flex items-center justify-center w-5 h-5">
-                <span className="text-lg font-bold text-white/80 hover:text-yellow-300 transition">DF</span>
-              </div>
-            ) : (
-              <h1 className="text-2xl font-bold">DashFiscal</h1>
-            )}
+            {/* Mobile sempre mostra o nome completo */}
+            <div className="md:hidden">
+              <h1 className="text-xl font-bold">DashFiscal</h1>
+            </div>
+            
+            {/* Desktop - depende do estado collapsed */}
+            <div className="hidden md:block">
+              {isCollapsed ? (
+                <div className="flex items-center justify-center w-5 h-5">
+                  <span className="text-lg font-bold text-white/80 hover:text-yellow-300 transition">DF</span>
+                </div>
+              ) : (
+                <h1 className="text-2xl font-bold">DashFiscal</h1>
+              )}
+            </div>
           </Link>
           
           {/* Conteúdo principal */}
@@ -125,12 +135,24 @@ export function Sidebar() {
                   className={cn(
                     "text-sm group flex p-3 w-full font-medium cursor-pointer hover:bg-white/10 rounded-lg transition",
                     pathname === route.href ? "bg-white/10" : "transparent",
-                    isCollapsed ? "justify-center" : "justify-start"
+                    // No mobile sempre justifica à esquerda
+                    "justify-start md:justify-start",
+                    isCollapsed ? "md:justify-center" : ""
                   )}
                   title={isCollapsed ? route.label : ""}
                 >
+                  {/* Layout mobile - sempre mostra ícone + texto */}
+                  <div className="flex items-center flex-1 md:hidden">
+                    <route.icon className={cn(
+                      "h-5 w-5 mr-3",
+                      pathname === route.href ? "text-yellow-300" : "text-white/80"
+                    )} />
+                    <span>{route.label}</span>
+                  </div>
+                  
+                  {/* Layout desktop - depende do estado collapsed */}
                   <div className={cn(
-                    "flex items-center",
+                    "hidden md:flex items-center",
                     isCollapsed ? "justify-center" : "flex-1"
                   )}>
                     <route.icon className={cn(
@@ -146,23 +168,35 @@ export function Sidebar() {
           </div>
           
           {/* Botão de logout no final */}
-          <div className={cn(
-            "px-3 py-2 mt-auto mb-2",
-            isCollapsed ? "flex justify-center" : ""
-          )}>
-            <Button 
-              variant="ghost" 
-              size={isCollapsed ? "icon" : "lg"} 
+          <div className="px-3 py-2 mt-auto mb-2">
+            <div
               className={cn(
-                "text-white hover:bg-white/10 border-0",
-                isCollapsed ? "w-10 h-10" : "w-full justify-start"
-              )} 
+                "text-sm group flex p-3 w-full font-medium cursor-pointer hover:bg-white/10 rounded-lg transition text-white",
+                // No mobile sempre justifica à esquerda
+                "justify-start md:justify-start",
+                isCollapsed ? "md:justify-center" : ""
+              )}
               onClick={logout}
               title={isCollapsed ? "Logout" : ""}
             >
-              <LogOut className={isCollapsed ? "h-5 w-5 text-white/80" : "mr-3 h-5 w-5 text-white/80"} />
-              {!isCollapsed && "Logout"}
-            </Button>
+              {/* Layout mobile - sempre mostra ícone + texto */}
+              <div className="flex items-center flex-1 md:hidden">
+                <LogOut className="h-5 w-5 mr-3 text-white/80" />
+                <span>Logout</span>
+              </div>
+              
+              {/* Layout desktop - depende do estado collapsed */}
+              <div className={cn(
+                "hidden md:flex items-center",
+                isCollapsed ? "justify-center" : "flex-1"
+              )}>
+                <LogOut className={cn(
+                  "h-5 w-5 text-white/80",
+                  isCollapsed ? "" : "mr-3"
+                )} />
+                {!isCollapsed && <span>Logout</span>}
+              </div>
+            </div>
           </div>
         </div>
       </div>

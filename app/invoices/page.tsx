@@ -13,6 +13,7 @@ import { FileUpload } from "./components/file-upload"
 import { ValidationRules } from "./components/validation-rules"
 import { ValidationRulesDestinadas } from "./components/validation-rules-destinadas"
 import { ValidationResults } from "./components/validation-results"
+import { NfeConsultation } from "./components/nfe-consultation"
 import { ValidationService, ValidationResult } from "@/lib/validation-service"
 
 export default function InvoicesPage() {
@@ -283,29 +284,23 @@ export default function InvoicesPage() {
   
   return (
     <div className="flex h-screen">
-      {/* Sidebar Desktop */}
-      <div className="hidden md:block h-full">
-        <Sidebar />
-      </div>
-      
-      {/* Sidebar Mobile - Visível apenas em dispositivos móveis */}
-      <div className="block md:hidden h-full">
-        <Sidebar />
-      </div>
+      {/* Sidebar - responsivo */}
+      <Sidebar />
       
       {/* Conteúdo principal */}
-      <div className="flex-1 transition-all duration-300">
+      <div className="flex-1 transition-all duration-300 min-w-0">
         <div className="sticky top-0 z-30 w-full">
           <Header />
         </div>
         <main className="h-[calc(100vh-64px)] overflow-y-auto">
-          <div className="p-4 sm:p-8">
-            <h1 className="text-2xl font-bold mb-4">Notas Fiscais</h1>
+          <div className="p-3 sm:p-4 lg:p-8">
+            <h1 className="text-xl sm:text-2xl font-bold mb-4">Notas Fiscais</h1>
             
             <Tabs defaultValue="emitidas" className="w-full">
-              <TabsList className="mb-4">
-                <TabsTrigger value="emitidas">NF-e EMITIDAS</TabsTrigger>
-                <TabsTrigger value="destinadas">NF-e DESTINADAS</TabsTrigger>
+              <TabsList className="mb-4 grid grid-cols-3 w-full max-w-lg">
+                <TabsTrigger value="emitidas" className="text-xs sm:text-sm">NF-e EMITIDAS</TabsTrigger>
+                <TabsTrigger value="destinadas" className="text-xs sm:text-sm">NF-e DESTINADAS</TabsTrigger>
+                <TabsTrigger value="consulta" className="text-xs sm:text-sm">CONSULTA NF-e</TabsTrigger>
               </TabsList>
               
               <TabsContent value="emitidas">
@@ -317,12 +312,12 @@ export default function InvoicesPage() {
                     </CardDescription>
                   </CardHeader>
                   
-                  <CardContent className="space-y-6">
+                  <CardContent className="space-y-4 sm:space-y-6">
                     <ValidationRules />
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                       <div>
-                        <h3 className="text-lg font-medium mb-2">Planilha SAT - NF-e Emitidas</h3>
+                        <h3 className="text-base sm:text-lg font-medium mb-2">Planilha SAT - NF-e Emitidas</h3>
                         <FileUpload
                           title="Arraste a planilha SAT ou clique para selecionar"
                           description="Excel ou CSV contendo os dados de NF-e emitidas do SAT"
@@ -338,7 +333,7 @@ export default function InvoicesPage() {
                       </div>
                       
                       <div>
-                        <h3 className="text-lg font-medium mb-2">Planilha Questor - Saídas</h3>
+                        <h3 className="text-base sm:text-lg font-medium mb-2">Planilha Questor - Saídas</h3>
                         <FileUpload
                           title="Arraste a planilha Questor ou clique para selecionar"
                           description="Excel ou CSV contendo os dados de saídas do sistema Questor"
@@ -358,7 +353,8 @@ export default function InvoicesPage() {
                       <Button 
                         onClick={processValidation}
                         disabled={!satFile || !questorFile || isProcessing}
-                        className="w-full max-w-md"
+                        className="w-full max-w-md text-sm sm:text-base"
+                        size="lg"
                       >
                         {isProcessing ? "Processando..." : "Validar Planilhas"}
                       </Button>
@@ -383,12 +379,12 @@ export default function InvoicesPage() {
                     </CardDescription>
                   </CardHeader>
                   
-                  <CardContent className="space-y-6">
+                  <CardContent className="space-y-4 sm:space-y-6">
                     <ValidationRulesDestinadas />
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                       <div>
-                        <h3 className="text-lg font-medium mb-2">Planilha SAT - NF-e Destinadas</h3>
+                        <h3 className="text-base sm:text-lg font-medium mb-2">Planilha SAT - NF-e Destinadas</h3>
                         <FileUpload
                           title="Arraste a planilha SAT ou clique para selecionar"
                           description="Excel ou CSV contendo os dados de NF-e destinadas do SAT"
@@ -404,7 +400,7 @@ export default function InvoicesPage() {
                       </div>
                       
                       <div>
-                        <h3 className="text-lg font-medium mb-2">Planilha Questor - Entradas</h3>
+                        <h3 className="text-base sm:text-lg font-medium mb-2">Planilha Questor - Entradas</h3>
                         <FileUpload
                           title="Arraste a planilha Questor ou clique para selecionar"
                           description="Excel ou CSV contendo os dados de entradas do sistema Questor"
@@ -424,11 +420,12 @@ export default function InvoicesPage() {
                       <Button 
                         onClick={processValidacaoDestinadas}
                         disabled={!satDestinadasFile || !questorEntradasFile || isProcessing}
-                        className="w-full max-w-md"
+                        className="w-full max-w-md text-sm sm:text-base"
+                        size="lg"
                       >
                         {isProcessing ? "Processando..." : "Validar Planilhas"}
                       </Button>
-                  </div>
+                    </div>
                     
                     {validationDestinadasResults && (
                       <ValidationResults 
@@ -438,6 +435,10 @@ export default function InvoicesPage() {
                     )}
                   </CardContent>
                 </Card>
+              </TabsContent>
+              
+              <TabsContent value="consulta">
+                <NfeConsultation />
               </TabsContent>
             </Tabs>
           </div>
