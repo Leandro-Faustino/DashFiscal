@@ -129,7 +129,7 @@ export default function LoginPage() {
         </CardContent>
         <CardFooter className="flex justify-center">
           <p className="text-xs text-center text-muted-foreground">
-            &copy; 2024 DashFiscal. Todos os direitos reservados.
+            &copy; 2025 DashFiscal. Todos os direitos reservados.
           </p>
         </CardFooter>
       </Card>

@@ -1,66 +1,13 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import { Sidebar } from "@/components/sidebar"
 import { Header } from "@/components/header"
 import { useSidebar } from "@/context/sidebar-context"
-import { useSettings } from "@/context/settings-context"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormDescription } from "@/components/ui/form"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
-import { toast } from "sonner"
-import { Folder } from "lucide-react"
-
-// Schema para validação do formulário
-const formSchema = z.object({
-  folderPath: z.string().min(1, { message: "Caminho da pasta é obrigatório" })
-})
-
-type FormValues = z.infer<typeof formSchema>
+import { CertificateManager } from "@/app/invoices/components/certificate-manager"
 
 export default function SettingsPage() {
   const { isCollapsed } = useSidebar();
-  const { outputPath, setOutputPath } = useSettings();
-  const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
-
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      folderPath: ""
-    }
-  });
-
-  // Carregar o valor do contexto quando o componente é montado
-  useEffect(() => {
-    if (outputPath) {
-      form.setValue("folderPath", outputPath);
-      setSelectedFolder(outputPath);
-    }
-  }, [outputPath, form]);
-
-  const handleSubmit = (data: FormValues) => {
-    setOutputPath(data.folderPath);
-    setSelectedFolder(data.folderPath);
-    
-    toast.success("Pasta de destino configurada com sucesso", {
-      description: `Caminho: ${data.folderPath}`
-    });
-  };
-
-  const handleFolderSelection = () => {
-    // No ambiente real do navegador, não é possível selecionar diretórios nativamente
-    // sem APIs específicas. Aqui estamos simulando.
-    // Em uma implementação real, seria feito através de um diálogo do sistema operacional
-    // ou um explorador de arquivos personalizado
-    
-    // Simulando um caminho de diretório para demonstração
-    const simulatedPath = "C:/Documentos/Arquivos Tratados";
-    form.setValue("folderPath", simulatedPath);
-  };
   
   return (
     <div className="flex h-screen">
@@ -75,60 +22,42 @@ export default function SettingsPage() {
           <div className="p-3 sm:p-6 lg:p-8">
             <h1 className="text-xl sm:text-2xl font-bold mb-6">Configurações</h1>
             
-            <Card className="max-w-2xl">
-              <CardHeader>
-                <CardTitle>Configuração de Diretório</CardTitle>
-                <CardDescription>
-                  Configure o diretório onde serão salvos seus arquivos tratados pelo sistema.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="folderPath"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Diretório de Destino</FormLabel>
-                          <div className="flex space-x-2">
-                            <FormControl>
-                              <Input 
-                                placeholder="Selecione a pasta para arquivos tratados" 
-                                {...field} 
-                                className="flex-1"
-                              />
-                            </FormControl>
-                            <Button 
-                              type="button" 
-                              variant="outline"
-                              onClick={handleFolderSelection}
-                              className="shrink-0"
-                            >
-                              <Folder className="h-4 w-4 mr-2" />
-                              Buscar
-                            </Button>
-                          </div>
-                          <FormDescription>
-                            Este será o local onde todos os arquivos processados pelo sistema serão salvos.
-                            No ambiente web, os arquivos serão disponibilizados para download.
-                          </FormDescription>
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <Button type="submit" className="w-full sm:w-auto">Salvar Configuração</Button>
-                  </form>
-                </Form>
-                
-                {selectedFolder && (
-                  <div className="mt-4 p-3 bg-muted rounded-md">
-                    <div className="text-sm font-medium">Diretório configurado:</div>
-                    <div className="text-sm text-muted-foreground">{selectedFolder}</div>
+            <div className="max-w-2xl space-y-6">
+              {/* Certificado Digital */}
+              <CertificateManager />
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle>Sobre o Sistema</CardTitle>
+                  <CardDescription>
+                    Informações sobre o DashFiscal e configurações do sistema.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="font-medium text-sm">Versão</h3>
+                      <p className="text-sm text-muted-foreground">1.0.0</p>
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-sm">Funcionalidades</h3>
+                      <ul className="text-sm text-muted-foreground space-y-1">
+                        <li>• Conciliação de dados SAT vs Questor</li>
+                        <li>• Validação de notas fiscais emitidas e destinadas</li>
+                        <li>• Geração de relatórios em Excel</li>
+                        <li>• Consulta de NFe online</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-sm">Downloads</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Todos os arquivos processados são automaticamente disponibilizados para download.
+                      </p>
+                    </div>
                   </div>
-                )}
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </main>
       </div>

@@ -65,7 +65,7 @@ export default function SplashScreen() {
         {/* Texto */}
         <h1 className="text-4xl font-bold text-[#217346] dark:text-white mb-2 animate-fade-in">DashFiscal</h1>
         <p className="text-slate-700 dark:text-white/80 text-lg mb-12 animate-fade-in-delay">
-          Simplificando a conciliação fiscal
+          Simplificando a Conciliação Fiscal
         </p>
         
         {/* Barra de progresso */}

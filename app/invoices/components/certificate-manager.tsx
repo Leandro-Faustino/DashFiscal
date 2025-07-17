@@ -332,31 +332,6 @@ export function CertificateManager({ onCertificateChange }: CertificateManagerPr
         </Card>
       )}
 
-      {/* Avisos sobre Modo de Operação */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="space-y-3">
-            <div className="flex items-start gap-2">
-              {isConfigured ? (
-                <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
-              ) : (
-                <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5" />
-              )}
-              <div>
-                <p className="font-medium">
-                  {isConfigured ? 'Modo Produção Habilitado' : 'Modo Demonstração Ativo'}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {isConfigured 
-                    ? 'Consultas serão realizadas diretamente no SEFAZ usando seu certificado digital.'
-                    : 'Consultas estão sendo simuladas para demonstração. Configure um certificado para consultas reais.'
-                  }
-                </p>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   )
 }

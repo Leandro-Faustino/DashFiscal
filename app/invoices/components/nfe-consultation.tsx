@@ -13,7 +13,6 @@ import { Loader2, Search, CheckCircle, XCircle, AlertTriangle, Info, Copy, Eye }
 import { toast } from "sonner"
 import { criarChaveNfe, extrairInfoChave, formatarData, formatarValor, formatarDocumento } from "@/lib/nfe-utils"
 import { ConsultaNfeResponse, STATUS_NFE_MAP, ChaveInfo } from "@/lib/nfe-types"
-import { CertificateManager } from "./certificate-manager"
 
 interface NfeConsultationProps {
   className?: string
@@ -27,6 +26,24 @@ export function NfeConsultation({ className }: NfeConsultationProps) {
   const [chaveInfo, setChaveInfo] = useState<ChaveInfo | null>(null)
   const [chaveValida, setChaveValida] = useState(false)
   const [certificateConfigured, setCertificateConfigured] = useState(false)
+
+  // Verificar status do certificado ao montar componente
+  useEffect(() => {
+    const checkCertificateStatus = async () => {
+      try {
+        const response = await fetch('/api/nfe/certificate/upload')
+        const data = await response.json()
+        
+        if (data.success) {
+          setCertificateConfigured(data.data.isConfigured)
+        }
+      } catch (error) {
+        console.error('Erro ao verificar status do certificado:', error)
+      }
+    }
+
+    checkCertificateStatus()
+  }, [])
 
   // Validar chave em tempo real
   useEffect(() => {
@@ -125,7 +142,7 @@ export function NfeConsultation({ className }: NfeConsultationProps) {
   }
 
   const carregarChaveTeste = () => {
-    const chaveTeste = "35200214200166000187550010000000071123456789"
+    const chaveTeste = "35200214200166000187550010000000071123456780"
     setChaveInput(chaveTeste.replace(/(\d{4})(?=\d)/g, '$1 '))
     toast.info("Chave de teste carregada!")
   }
@@ -133,8 +150,17 @@ export function NfeConsultation({ className }: NfeConsultationProps) {
   return (
     <div className={className}>
       <div className="space-y-6">
-        {/* Gerenciador de Certificado */}
-        <CertificateManager onCertificateChange={setCertificateConfigured} />
+        {/* Aviso sobre Certificado */}
+        {!certificateConfigured && (
+          <Alert>
+            <Info className="h-4 w-4" />
+            <AlertDescription>
+              Para consultas em produção, configure seu certificado digital na aba{" "}
+              <strong>Configurações</strong>. Consultas em homologação funcionam sem certificado.
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Formulário de Consulta */}
         <Card>
           <CardHeader>

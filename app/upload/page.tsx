@@ -4,7 +4,6 @@ import { useState, useCallback, useRef } from "react"
 import { Sidebar } from "@/components/sidebar"
 import { Header } from "@/components/header"
 import { useSidebar } from "@/context/sidebar-context"
-import { useSettings } from "@/context/settings-context"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { toast } from "sonner"
@@ -27,7 +26,6 @@ import {
 
 export default function UploadPage() {
   const { isCollapsed } = useSidebar();
-  const { outputPath } = useSettings();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileContent, setFileContent] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -119,15 +117,6 @@ export default function UploadPage() {
     setIsUploading(true);
     
     try {
-      // Verifica se o caminho de saída está configurado
-      if (!outputPath) {
-        toast.error("Caminho de saída não configurado", {
-          description: "Configure o diretório de saída na página de configurações"
-        });
-        setIsUploading(false);
-        return;
-      }
-      
       // Log para debug - mostrar o começo do arquivo para verificar estrutura
       const firstLines = fileContent.split('\n').slice(0, 3);
       console.log('Primeiras linhas do arquivo:', firstLines);
@@ -140,14 +129,14 @@ export default function UploadPage() {
       }
       
       // Processar o arquivo usando o serviço
-      const result = await ExcelService.processTextFile(fileContent, outputPath);
+      const result = await ExcelService.processTextFile(fileContent, "");
       
       setProcessingResults(result);
       setIsProcessed(true);
       
       if (result.success) {
         toast.success("Arquivo processado com sucesso", {
-          description: `Planilha '${result.filename}' foi gerada e disponibilizada para download. Em um ambiente de produção, seria salva em: ${outputPath}`
+          description: `Planilha '${result.filename}' foi gerada e disponibilizada para download.`
         });
         
         // Se houver erros (não fatais), mostra também uma notificação de aviso
@@ -319,12 +308,6 @@ export default function UploadPage() {
                 <CardDescription>
                   Selecione um arquivo .txt contendo os dados para processamento.
                 </CardDescription>
-                {!outputPath && (
-                  <div className="text-destructive mt-2 text-sm">
-                    Atenção: Configure o diretório de saída na página de configurações 
-                    antes de processar arquivos.
-                  </div>
-                )}
               </CardHeader>
               <CardContent>
                 {!selectedFile ? (
@@ -411,11 +394,6 @@ export default function UploadPage() {
                             </div>
                           )}
                           
-                          {processingResults?.success && (
-                            <div className="mt-1 text-sm text-muted-foreground">
-                              Diretório configurado: {outputPath}
-                            </div>
-                          )}
                           
                           {processingResults?.errors && processingResults.errors.length > 0 && (
                             <div className="mt-2">
@@ -431,7 +409,7 @@ export default function UploadPage() {
                       </div>
                     ) : (
                       <Button 
-                        disabled={isUploading || hasError || !fileContent || !outputPath} 
+                        disabled={isUploading || hasError || !fileContent} 
                         className="w-full"
                         onClick={handleUpload}
                       >
@@ -439,12 +417,6 @@ export default function UploadPage() {
                       </Button>
                     )}
                     
-                    {!outputPath && fileContent && !isProcessed && (
-                      <div className="p-3 bg-amber-50 border border-amber-200 text-amber-700 rounded-md text-sm flex items-center">
-                        <AlertCircle className="h-4 w-4 mr-2 flex-shrink-0" />
-                        <span>É necessário configurar um diretório de destino nas configurações antes de processar o arquivo.</span>
-                      </div>
-                    )}
                   </div>
                 )}
               </CardContent>

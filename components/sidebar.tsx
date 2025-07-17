@@ -84,7 +84,7 @@ export function Sidebar() {
         "fixed inset-y-0 left-0 z-50 transform transition-all duration-300 ease-in-out bg-[#217346] h-full",
         isMobileOpen ? "translate-x-0 w-64" : "-translate-x-full", // Largura fixa mais apropriada para mostrar texto
         "md:relative md:translate-x-0",
-        isCollapsed ? "md:w-16" : "md:w-72",
+        isCollapsed ? "md:w-16" : "md:w-64",
       )}>
         {/* Botão para fechar no mobile */}
         <Button 
@@ -101,7 +101,7 @@ export function Sidebar() {
           <Link 
             href="/dashboard" 
             className={cn(
-              "flex h-16 items-center",
+              "flex h-16 items-center group hover:opacity-90 transition-all duration-300",
               // No mobile sempre mostra o nome completo
               "px-6 md:px-6",
               isCollapsed ? "md:justify-center" : ""
@@ -109,17 +109,41 @@ export function Sidebar() {
           >
             {/* Mobile sempre mostra o nome completo */}
             <div className="md:hidden">
-              <h1 className="text-xl font-bold">DashFiscal</h1>
+              <div className="flex flex-col">
+                <div className="flex items-baseline">
+                  <span className="text-xl font-black text-yellow-300 tracking-tight leading-none font-['Inter','system-ui',sans-serif] group-hover:text-yellow-200 transition-colors duration-300">
+                    Dash
+                  </span>
+                  <span className="text-xl font-light text-white tracking-tight leading-none font-['Inter','system-ui',sans-serif] group-hover:text-gray-100 transition-colors duration-300">
+                    Fiscal
+                  </span>
+                </div>
+                <span className="text-[9px] text-yellow-200/70 font-medium tracking-[0.1em] uppercase leading-none mt-0.5 font-['Inter','system-ui',sans-serif]">
+                  Conciliação Inteligente
+                </span>
+              </div>
             </div>
             
             {/* Desktop - depende do estado collapsed */}
             <div className="hidden md:block">
               {isCollapsed ? (
                 <div className="flex items-center justify-center w-5 h-5">
-                  <span className="text-lg font-bold text-white/80 hover:text-yellow-300 transition">DF</span>
+                  <span className="text-lg font-black text-yellow-300 hover:text-yellow-200 transition-colors duration-300 font-['Inter','system-ui',sans-serif]">DF</span>
                 </div>
               ) : (
-                <h1 className="text-2xl font-bold">DashFiscal</h1>
+                <div className="flex flex-col">
+                  <div className="flex items-baseline">
+                    <span className="text-2xl font-black text-yellow-300 tracking-tight leading-none font-['Inter','system-ui',sans-serif] group-hover:text-yellow-200 transition-colors duration-300">
+                      Dash
+                    </span>
+                    <span className="text-2xl font-light text-white tracking-tight leading-none font-['Inter','system-ui',sans-serif] group-hover:text-gray-100 transition-colors duration-300">
+                      Fiscal
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-yellow-200/70 font-medium tracking-[0.12em] uppercase leading-none mt-0.5 font-['Inter','system-ui',sans-serif]">
+                    Conciliação Inteligente
+                  </span>
+                </div>
               )}
             </div>
           </Link>
